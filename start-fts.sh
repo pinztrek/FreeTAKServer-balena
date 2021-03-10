@@ -6,10 +6,8 @@ if ! touch /data/.verify_access; then
   exit 2
 fi
 
-# JAB
-
-echo /libdirs ----------------------------------------------
-ls -l /usr/local/lib/python3.8/dist-packages/FreeTAKServer/
+#echo /libdirs ----------------------------------------------
+#ls -l /usr/local/lib/python3.8/dist-packages/FreeTAKServer/
 
 # create cert dir
 mkdir -p /data/certs
@@ -19,9 +17,9 @@ chmod --quiet 775 /data/certs
 echo /data ----------------------------------------------
 ls -l /data
 
-echo params ----------------------------------------------
-grep -i certs /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
-grep -i folder /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
+#echo params ----------------------------------------------
+#grep -i certs /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
+#grep -i folder /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
 
 #FTS doesn't pre-create logs directory
 mkdir -pv /data/logs
