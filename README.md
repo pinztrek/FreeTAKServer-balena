@@ -17,6 +17,7 @@ explore. But you should be able to use this guide to get an FTS instance running
 1. Create your account at <https://balena-cloud.com> and login
 2. Create a new balena "application"  for FreeTAKserver using the following link:<br><br>
 <https://dashboard.balena-cloud.com/deploy?repoUrl=https://github.com/pinztrek/FreeTAKServer-balena>
+<br> or this button: [![](https://www.balena.io/deploy.png)](https://dashboard.balena-cloud.com/deploy)
 
    * Select your Device type. (You can search with just a few letters ex: rasp)
 
