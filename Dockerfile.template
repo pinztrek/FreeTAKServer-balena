@@ -4,7 +4,11 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu-python:3.8-bionic-build
 
 MAINTAINER pinztrek
 
-ARG FTS_VERSION=1.7.3
+ARG FTS_VERSION=1.5.12
+
+# Public IP is used to create the certs and datapackage for users
+# The IP rcCan be edited in the datapackage after the fact if needed
+ARG PUBLIC_IP=172.16.30.30
 
 RUN apt-get update 
 RUN install_packages libxml2-dev libxslt-dev libcairo2-dev vim-tiny
@@ -14,8 +18,7 @@ RUN install_packages libxml2-dev libxslt-dev libcairo2-dev vim-tiny
 
 RUN pip3 --version && python3 --version
 
-RUN pip3 install wheel 
-RUN pip3 install flask_login 
+RUN pip3 install wheel flask_login defusedxml
 
 #RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 #RUN ln -s $HOME/.cargo/env /etc/profile.d/cargo_env.sh
@@ -30,26 +33,30 @@ RUN useradd -ms /bin/bash fts && \
     chown fts:fts /data  /home/fts
 
 
-# pip installs in different dirs depending on if from debian or from ubuntu/python... we don't care
+# pip installs in different dirs depending on if from debian or from 
+# ubuntu/python... we don't care
 RUN ln -s /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/dist-packages
 
 # Edit some FTS params to be docker friendly. Mostly to deal with read only /usr/local/lib
 RUN  sed -i s='logs'='/data/logs'=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/LoggingConstants.py && \
     sed -i 's+DBFilePath = .*+DBFilePath = "/data/FTSDataBase.db"+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
+    sed -i "s+UserConnectionIP = .*+UserConnectionIP = str(\'$PUBLIC_IP\')+g" /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
+    sed -i 's+ConnectionMessage = .*+ConnectionMessage = ""+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
 #    sed -i s=FreeTAKServerDataPackageDataBase.db=/data/DataPackageDataBase.db=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/DataPackageServerConstants.py && \
     sed -i s=FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/DataPackageServerConstants.py && \
-    sed -i s={MainPath}/FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
+    sed -i s={MainPath}/FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
+    sed -i 's+{MainPath}/certs+/data/certs+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
 
-
-# certs dir has to be writable due to cert generation
-RUN sed -i 's+{MainPath}/certs+/data/certs+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
-
+# Now fix some dir perms, and required dirs that FTS expects
 RUN    mkdir -p -m 775 /data/certs && \
-    chown fts:fts /data/certs
-
-RUN mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck
-RUN mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/checklist
-RUN mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/template
+    chown fts:fts /data/certs && \
+    mkdir -p -m 775 /data/certs/ClientPackages && \
+    chown fts:fts /data/certs/ClientPackages && \
+    mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck && \
+    mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/checklist && \
+    mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/template && \
+    echo "set -o vi" >> /etc/bash.bashrc && \
+    echo "alias ll='ls -l'" >> /etc/bash.bashrc 
 
 # Clean up items we no longer need (having this earlier breaks some pip items)
 #RUN apt-get remove -y python3-pip curl python3-setuptools build-essential python3-dev && \
@@ -64,6 +71,7 @@ RUN chmod +x /start-fts.sh
 EXPOSE 8087 
 EXPOSE 8089 
 EXPOSE 8080
+EXPOSE 8443
 
 VOLUME ["/data"]
 WORKDIR /data
