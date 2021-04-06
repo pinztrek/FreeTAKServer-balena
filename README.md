@@ -61,3 +61,15 @@ If you leave a orphaned device it thinks is still running it will not let you de
 can push builds to balene using git and not have to install node and the cli. <br><br>
 The CLI is a bit easier, but also takes a bit to install. 
 
+### Overriding Defaults via Env Variables
+
+This Balena Docker config reads default FTS params from fts_args.env. If not
+overridden via an app, service, or device env variable these are used. 
+You can set env varables from the balena gui. 
+
+Most installs will want to use the defaults and just override in Balena Docker 
+ENV vars if needed. But if you do want to change the defaults do so in the 
+env file. (Ex: If you had a fleet of servers and wanted them to be the same)
+
+Not all required FTS params can be overridden by env vars or command line yet, 
+so some still require sed work in the dockerfile. 
