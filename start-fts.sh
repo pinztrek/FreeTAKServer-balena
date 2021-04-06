@@ -22,7 +22,7 @@ ls -l /data
 #grep -i folder /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
 
 #FTS doesn't pre-create logs directory
-mkdir -pv /data/logs
+mkdir -pv /data/log
 
 #Set server message if passed in
 if [ -z "${FTS_CONNECTION_MESSAGE}" ]; then

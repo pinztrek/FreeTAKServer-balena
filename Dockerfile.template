@@ -4,7 +4,7 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu-python:3.8-bionic-build
 
 MAINTAINER pinztrek
 
-ARG FTS_VERSION=1.5.12
+ARG FTS_VERSION=1.7.5
 
 # Public IP is used to create the certs and datapackage for users
 # The IP rcCan be edited in the datapackage after the fact if needed
@@ -38,7 +38,7 @@ RUN useradd -ms /bin/bash fts && \
 RUN ln -s /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/dist-packages
 
 # Edit some FTS params to be docker friendly. Mostly to deal with read only /usr/local/lib
-RUN  sed -i s='logs'='/data/logs'=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/LoggingConstants.py && \
+RUN  sed -i s='/var'='/data'=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/LoggingConstants.py && \
     sed -i 's+DBFilePath = .*+DBFilePath = "/data/FTSDataBase.db"+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
     sed -i "s+UserConnectionIP = .*+UserConnectionIP = str(\'$PUBLIC_IP\')+g" /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
     sed -i 's+ConnectionMessage = .*+ConnectionMessage = None+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
