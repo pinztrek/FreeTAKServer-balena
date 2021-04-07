@@ -6,18 +6,22 @@ MAINTAINER pinztrek
 
 ARG FTS_VERSION=1.7.5
 
+# Set this to None for no message or "\'my connect string\'" for a real string
+#ARG FTS_CONNECT_STRING=None
+#ARG FTS_CONNECT_STRING="\'my connect string\'"
+
+
 # Public IP is used to create the certs and datapackage for users
 # The IP rcCan be edited in the datapackage after the fact if needed
 ARG PUBLIC_IP=172.16.30.30
 
-RUN apt-get update 
-RUN install_packages libxml2-dev libxslt-dev libcairo2-dev vim-tiny
+RUN apt-get update && \
+    install_packages libxml2-dev libxslt-dev libcairo2-dev vim-tiny
 
-#JAB for debug purposes
-#RUN apt-get install -y --no-install-recommends vim-tiny net-tools
-
+# Handy to know what we have
 RUN pip3 --version && python3 --version
 
+# Now need these libs
 RUN pip3 install wheel flask_login defusedxml
 
 #RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
@@ -29,32 +33,32 @@ RUN pip3 install FreeTAKServer==${FTS_VERSION} && \
     pip3 check FreeTakServer
 
 RUN useradd -ms /bin/bash fts && \
-    mkdir -p -m 775 /data && \
-    chown fts:fts /data  /home/fts
+    chown fts:fts /home/fts
 
 
 # pip installs in different dirs depending on if from debian or from 
 # ubuntu/python... we don't care
 RUN ln -s /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/dist-packages
 
-# Edit some FTS params to be docker friendly. Mostly to deal with read only /usr/local/lib
+# Edit some FTS params to be docker friendly.  (read only /usr/local/lib)
 RUN  sed -i s='/var'='/data'=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/LoggingConstants.py && \
-    sed -i 's+DBFilePath = .*+DBFilePath = "/data/FTSDataBase.db"+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
-    sed -i "s+UserConnectionIP = .*+UserConnectionIP = str(\'$PUBLIC_IP\')+g" /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
-    sed -i 's+ConnectionMessage = .*+ConnectionMessage = None+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
-#    sed -i s=FreeTAKServerDataPackageDataBase.db=/data/DataPackageDataBase.db=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/DataPackageServerConstants.py && \
+    #
+    # Still need connect message, no env var yet. 
+    #sed -i 's+ConnectionMessage = .*+ConnectionMessage = None+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
+    sed -i "s+ConnectionMessage = .*+ConnectionMessage = ${FTS_CONNECT_STRING-\'FTS ${FTS_VERSION}\'}+g" /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
+    #
+    # this is different than the main db, no variable for this yet
+    sed -i s=FreeTAKServerDataPackageDataBase.db=/data/DataPackageDataBase.db=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/DataPackageServerConstants.py && \
+    #
+    # Need both of these, they are in separate config files
     sed -i s=FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/DataPackageServerConstants.py && \
-    sed -i s={MainPath}/FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py && \
-    sed -i 's+{MainPath}/certs+/data/certs+g' /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
+    sed -i s={MainPath}/FreeTAKServerDataPackageFolder=/data/DataPackageFolder=g /usr/local/lib/python3.8/dist-packages/FreeTAKServer/controllers/configuration/MainConfig.py
 
 # Now fix some dir perms, and required dirs that FTS expects
-RUN    mkdir -p -m 775 /data/certs && \
-    chown fts:fts /data/certs && \
-    mkdir -p -m 775 /data/certs/ClientPackages && \
-    chown fts:fts /data/certs/ClientPackages && \
-    mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck && \
+RUN mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck && \
     mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/checklist && \
     mkdir -p -m 775 /usr/local/lib/python3.8/dist-packages/FreeTAKServer/ExCheck/template && \
+    # set some useful things
     echo "set -o vi" >> /etc/bash.bashrc && \
     echo "alias ll='ls -l'" >> /etc/bash.bashrc 
 
@@ -67,6 +71,8 @@ RUN    mkdir -p -m 775 /data/certs && \
 
 COPY start-fts.sh /start-fts.sh
 RUN chmod +x /start-fts.sh
+COPY fts_args.env /fts_args.env
+
 
 EXPOSE 8087 
 EXPOSE 8089 
@@ -77,5 +83,4 @@ VOLUME ["/data"]
 WORKDIR /data
 USER fts
 
-#CMD "/bin/bash"
 ENTRYPOINT ["/bin/bash", "/start-fts.sh"]
