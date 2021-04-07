@@ -1,9 +1,11 @@
 # FreeTAKServer-balena
 
-## Simple docker file to run FTS in Balena environment
+## Simple docker configuration to run FTS in the Balena environment
 
 Balena offers a docker environment along with the capability to make devices as IOT deployed devices. 
-Specifically, it is optimized to manage a fleet of devices. 
+Specifically, it is optimized to manage a fleet of devices with machine
+independence, release mgt, easy push of apps to target devices, and a GUI 
+to manage it. 
 
 If all you want is a standalone pi running FTS AND the capability to use it as a general purpose linux host, then this is not for you. 
 
@@ -52,7 +54,7 @@ You can switch to Production after you have debugged and setup your SSH keys.
 
     If you selected the development OS, you can also ssh into is at port 22222. It will give you a root login. 
 
-### Note
+### Balena Usage Notes
 
 * Important: If you decide to change things, make sure you delete the device before deleting the application. 
 If you leave a orphaned device it thinks is still running it will not let you delete the application. 
@@ -67,9 +69,21 @@ This Balena Docker config reads default FTS params from fts_args.env. If not
 overridden via an app, service, or device env variable these are used. 
 You can set env varables from the balena gui. 
 
-Most installs will want to use the defaults and just override in Balena Docker 
-ENV vars if needed. But if you do want to change the defaults do so in the 
-env file. (Ex: If you had a fleet of servers and wanted them to be the same)
+Most installs will want to use the defaults in the env file and just 
+override via env variables in Balena Docker GUI if needed. But if you do 
+want to change the defaults do so in the env file. (Ex: If you had a 
+fleet of servers and wanted them to be the same)
 
 Not all required FTS params can be overridden by env vars or command line yet, 
 so some still require sed work in the dockerfile. 
+
+### Future improvement
+
+* Main goal is to get rid of all the SED's. But that will require additional
+FTS params to be made available via ENV variable or cmd line arg
+
+### Non-Balena Docker usage
+
+* The Balena Dockerfile.template is largely just a standard Docker dockerfile
+format, with a few extensions. Most notably the FROM statement. You should be 
+able to replace with regular Docker statements and be in business. 
